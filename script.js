@@ -1,7 +1,7 @@
 window.onload = function(){
     //フルウィンドウにする
-    const CANVAS_SIZE_X = window.innerWidth;
-    const CANVAS_SIZE_Y = window.innerHeight;
+    const CANVAS_SIZE_X = 1000;
+    const CANVAS_SIZE_Y = 750;
     //マウス座標
     let mouseX = 0,mouseY = 0; omouseX = 0, omouseY = 0, mousePress = 0, wheel = 0;
     let fps = 1000 /30;
