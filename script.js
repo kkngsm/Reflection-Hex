@@ -58,6 +58,7 @@ window.onload = function(){
         time       : gl.getUniformLocation(buildingprg, 'time'),
         Hex_height : gl.getUniformLocation(buildingprg, '_Hex_height'),
         Fog : gl.getUniformLocation(buildingprg, '_Fog'),
+        Reflectance : gl.getUniformLocation(buildingprg, '_Reflectance'),
     };
 
     const passprgUL = {
@@ -86,6 +87,7 @@ window.onload = function(){
 
         gl.uniform1f(buildingprgUL['Hex_height'], guiParam.Hex_height);
         gl.uniform1f(buildingprgUL['Fog'], guiParam.Fog);
+        gl.uniform1f(buildingprgUL['Reflectance'], guiParam.Reflectance);
 
 
         gl.drawElements(gl.TRIANGLES, indices.length , gl.UNSIGNED_SHORT, 0);

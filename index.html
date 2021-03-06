@@ -28,6 +28,7 @@ uniform float mousePress;
 uniform float wheel;
 uniform float time;
 
+uniform float _Reflectance;
 uniform float _Hex_height;
 uniform float _Fog;
 
@@ -137,7 +138,6 @@ void main() {
     vec3 col = vec3(1.);
 
     float d,
-          Reflectance = 0.8,
           alpha = 1.;
 
     float firsthitmarch = 0.;
@@ -153,7 +153,7 @@ void main() {
             rdir = reflect(rdir,n);
             ray += n*0.1;
 
-            alpha *= Reflectance;
+            alpha *= _Reflectance;
 
             col = vec3(alpha);
         }
