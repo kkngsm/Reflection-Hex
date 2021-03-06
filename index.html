@@ -1,0 +1,192 @@
+<!D0CTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>WebGL TEST</title>
+        <script src="script.js" type="text/javascript"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+        <script src="gui.js" type="text/javascript"></script>
+
+        <script id="vs" type="vertex-shader">#version 300 es
+in vec3 vPos;
+out vec2 fragCoord;
+out vec2 texCoord;
+void main() {
+    fragCoord = (vPos.xy + vec2(1., 1.))/2.;
+    texCoord = vec2(fragCoord.x, 1. - fragCoord.y);
+    gl_Position = vec4(vPos, 1.);
+}
+        </script>
+        <script id="buildingfs" type="fragment-shader">#version 300 es
+precision mediump float;
+in vec2 fragCoord;
+layout (location = 0) out vec4 fragColor;
+uniform vec2 resolution;
+uniform vec2 omouse;
+uniform vec2 mouse;
+uniform float mousePress;
+uniform float wheel;
+uniform float time;
+
+uniform float _Hex_height;
+uniform float _slide;
+
+float smax( float a, float b, float k )
+{
+    float res = exp( k*a ) + exp( k*b );
+    return log( res )/k;
+}
+
+#define SQRT3 1.7320508
+#define SQRT0_75 0.8660254
+float sdRoundHex(vec3 p, vec2 h, float r){
+    vec3 q;
+    q.xy = abs(p.xy);
+    q.z  = p.z;
+    vec2 hex = vec2(SQRT0_75, .5);
+
+    float d1 = dot(q.xz, hex);
+    d1 = smax(d1, q.z, r);
+    
+    float d2 = dot(q.xz, vec2(hex.x, -hex.y));
+    d2 = smax(d2, -q.z, r);
+    
+    float d = smax(d1, d2, r);
+
+    return smax(q.y-h.y,d-h.x, r);
+}
+
+float sdPlane( vec3 p, vec3 n, float h )
+{
+  // n must be normalized
+  return dot(p,n) + h;
+}
+
+float hash(float p) { p = fract(p * 0.011); p *= p + 7.5; p *= p + p; return fract(p); }
+float noise(vec2 x) {
+    const vec2 step = vec2(110, 241);
+
+    vec2 i = floor(x);
+    vec2 f = fract(x);
+ 
+    // For performance, compute the base input to a 1D hash from the integer part of the argument and the 
+    // incremental change to the 1D based on the 3D -> 1D wrapping
+    float n = dot(i, step);
+
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix( hash(n + dot(step, vec2(0, 0))), hash(n + dot(step, vec2(1, 0))), u.x),
+               mix( hash(n + dot(step, vec2(0, 1))), hash(n + dot(step, vec2(1, 1))), u.x), u.y);
+
+}
+
+
+float dist_func(vec3 p){
+    p.y = mix(p.y+0.5, -p.y +1.5, step(.5, p.y));
+    
+    vec3 q1 = p,
+         q2 = p;
+    vec2 hex = vec2(SQRT3, 1.);
+    vec2 halfhex = hex*0.5;
+    q1.xz = mod(p.xz, hex)-halfhex;
+    q2.xz = mod(p.xz-halfhex, hex)-halfhex;
+    float d = step(length(q1.xz), length(q2.xz));
+    vec3 q = mix(q2, q1, d);
+    vec2 id = p.xz-q.xz;
+    float h = _Hex_height*noise(id);
+    q.y -= h;
+    return min(sdRoundHex(q, vec2(0.35, h), 88.),
+           sdPlane( p, vec3(0,1,0), 0. ));
+}
+
+vec3 get_n(vec3 p){
+    float ep = 0.0001;
+    vec3 epx = vec3(ep, 0., 0.);
+    vec3 epy = vec3(0., ep, 0.);
+    vec3 epz = vec3(0., 0., ep);
+    return normalize(vec3(
+        dist_func(p+epx)-dist_func(p-epx),
+        dist_func(p+epy)-dist_func(p-epy),
+        dist_func(p+epz)-dist_func(p-epz)
+    ));
+}
+
+void main() {
+    float t = time*0.2;
+    float t2 = t - 0.2;
+    vec2 uv = (fragCoord * 2. - 1.)*resolution/min(resolution.x,resolution.y);
+    uv /= 1. + length(uv)*.1;
+    
+    // camera
+    vec3 camera = vec3(0, 0.5, 0);
+    vec3 ro = vec3(0, 0 ,t2) + camera;
+    
+    vec3 lookat = vec3(0, 0, t) + camera;
+    float zoom = wheel*0.1 + 1.;
+    
+    vec3 f = normalize(lookat-ro);
+    vec3 vertical = normalize(cross(vec3(0,1,0), f));
+    vec3 horizontal = cross(f, vertical);
+    vec3 i = ro + f*zoom + uv.x * vertical + uv.y * horizontal;
+    // ray direction
+    vec3 rdir = normalize(i - ro);
+
+    vec3 ray = ro;
+    vec3 col = vec3(1.);
+
+    float d,
+          dist = 0.,
+          Reflectance = 0.8,
+          alpha = 1.;
+    float firsthitmarch = 0.;
+    for(int i = 0; i < 64; i++){
+        float d = dist_func(ray);
+        if(d < 0.001){
+            vec3 n = get_n(ray);
+            rdir = reflect(rdir,n);
+            ray += n*0.1;
+
+            alpha *= Reflectance;;
+
+            col = vec3(alpha);
+        }
+        ray += rdir * d;
+    }
+    //col = vec3(alpha);
+
+    fragColor.xyz = col;
+    fragColor.w = 1.;
+}
+        </script>
+        
+        <script id="fsp" type="fragment-shader">#version 300 es
+precision mediump float;
+in vec2 fragCoord;
+layout (location = 0) out vec4 fragColor;
+uniform sampler2D buildingTex;
+
+void main() {
+    vec4 hex = texture(buildingTex, fragCoord);
+    vec3 sky = mix(vec3(0.8, 0.85, 0.9), vec3(0.25, 0.3, 0.4), fragCoord.y);
+
+    fragColor.xyz = hex.xyz;
+    fragColor.w = 1.;
+}
+        </script>
+        <style type="text/css">
+            body{
+                margin : 0px ;
+                padding : 0px ;
+            }
+            body #wrapper{
+                width: 100%;
+                height: 100%;
+                position: fixed;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="wrapper">
+            <canvas id="canvas"></canvas>
+        </div>
+    </body>
+</html>
