@@ -61,7 +61,9 @@ window.onload = function(){
     };
 
     const passprgUL = {
-        buildingTex   : gl.getUniformLocation(passprg, 'buildingTex'),
+        mouse      : gl.getUniformLocation(passprg, 'mouse'),
+        resolution : gl.getUniformLocation(passprg, 'resolution'),
+        previous   : gl.getUniformLocation(passprg, 'previous'),
     };
     let start_time = Date.now(); 
     let now_time = 0;
@@ -98,7 +100,9 @@ window.onload = function(){
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clearDepth(1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        setUniformTexture(passprgUL['buildingTex'], 0, buildingFrameBuffer.t);
+        gl.uniform2f(passprgUL['mouse'], mouseX, mouseY);
+        gl.uniform2f(passprgUL['resolution'], c.width, c.height);
+        setUniformTexture(passprgUL['previous'], 0, buildingFrameBuffer.t);
         gl.drawElements(gl.TRIANGLES, indices.length , gl.UNSIGNED_SHORT, 0);
 
         gl.flush();
