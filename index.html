@@ -159,7 +159,7 @@ void main() {
         }
         ray += rdir * d;
     }
-    col += fog(length(hitpos-ro), _Fog);
+    // col += fog(length(hitpos-ro), _Fog);
 
     fragColor.xyz = col;
     fragColor.w = 1.;
