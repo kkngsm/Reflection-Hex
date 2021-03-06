@@ -57,7 +57,7 @@ window.onload = function(){
         wheel      : gl.getUniformLocation(buildingprg, 'wheel'),
         time       : gl.getUniformLocation(buildingprg, 'time'),
         Hex_height : gl.getUniformLocation(buildingprg, '_Hex_height'),
-        slide : gl.getUniformLocation(buildingprg, '_slide'),
+        Fog : gl.getUniformLocation(buildingprg, '_Fog'),
     };
 
     const passprgUL = {
@@ -83,10 +83,9 @@ window.onload = function(){
         gl.uniform1f(buildingprgUL['mousePress'], mousePress);
         gl.uniform1f(buildingprgUL['wheel'], wheel);
         gl.uniform1f(buildingprgUL['time'], now_time);
-        gl.uniform1f(buildingprgUL['slide'], guiParam.slide);
-
 
         gl.uniform1f(buildingprgUL['Hex_height'], guiParam.Hex_height);
+        gl.uniform1f(buildingprgUL['Fog'], guiParam.Fog);
 
 
         gl.drawElements(gl.TRIANGLES, indices.length , gl.UNSIGNED_SHORT, 0);
